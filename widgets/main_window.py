@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QGridLayout, QApplication, QPu
 from PyQt5.Qt import QRect
 
 from widgets.upload_file import UploadFile
+from widgets.algorithm_select import AlgorithmWidget
+from widgets.process_file import ProcessAlgorithm
 
 
 class MainWindow(QMainWindow):
@@ -22,8 +24,8 @@ class MainWindow(QMainWindow):
         layout = QGridLayout()
 
         self.left_widget = UploadFile(self)
-        self.central_widget = UploadFile(self)
-        self.right_widget = UploadFile(self)
+        self.central_widget = AlgorithmWidget(self)
+        self.right_widget = ProcessAlgorithm(self)
         layout.addWidget(self.left_widget, 0, 0)
         layout.addWidget(self.central_widget, 0, 1)
         layout.addWidget(self.right_widget, 0, 2)
