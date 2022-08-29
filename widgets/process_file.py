@@ -1,12 +1,14 @@
 import os.path
 import hashlib
 
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QPushButton, QMessageBox, QInputDialog
 
 from PyQt5.QtCore import Qt
 from cryptography.fernet import Fernet
 
 import widgets.upload_file
+
+PATH_TO_RESULT = os.path.join(os.getcwd(), 'data')
 
 
 class ProcessAlgorithm(QWidget):
@@ -20,6 +22,7 @@ class ProcessAlgorithm(QWidget):
         self.selected_file = None
         self.selected_algo = None
         self.crypto_button = None
+        self.decrypt_button = None
         self.init_ui()
         self.setDisabled(True)
 
@@ -46,42 +49,133 @@ class ProcessAlgorithm(QWidget):
         self.crypto_button.setMinimumSize(100, 50)
         self.crypto_button.clicked.connect(self.process_algorithm)
 
+        self.decrypt_button = QPushButton("Расшифровать")
+        self.decrypt_button.setMinimumSize(100, 50)
+        self.decrypt_button.clicked.connect(self.decrypt_algorithm)
+
         layout.addWidget(self.file_title, 0, 0, 1, 1)
         layout.addWidget(self.algo_title, 1, 0, 1, 1)
         layout.addWidget(self.selected_file, 0, 1, 1, 1)
         layout.addWidget(self.selected_algo, 1, 1, 1, 1)
-        layout.addWidget(self.crypto_button, 3, 0, 1, 2)
+        layout.addWidget(self.crypto_button, 3, 0, 1, 1)
+        layout.addWidget(self.decrypt_button, 3, 1, 1, 1)
 
         self.setLayout(layout)
 
-    @staticmethod
-    def write_key():
+    def write_key(self):
         key = Fernet.generate_key()
-        with open('crypto.key', 'wb') as file:
+        with open(os.path.join(PATH_TO_RESULT + 'crypto.key'), 'wb') as file:
+            file.write(key)
+        with open(os.path.join(PATH_TO_RESULT + f'{self.selected_file.text()}_crypto_key.txt'), 'wb') as file:
             file.write(key)
 
     def load_key(self):
-        self.key = open('crypto.key', 'rb').read()
+        self.key = open(PATH_TO_RESULT + 'crypto.key', 'rb').read()
+
+    def process_AES(self, file_path: str):
+        """Шифрование алгоритмом AES"""
+        if not os.path.exists(os.path.join(PATH_TO_RESULT, 'crypto.key')):
+            ProcessAlgorithm.write_key(self)
+            self.load_key()
+        f = Fernet(self.key)
+        print(self.key)
+        with open(file_path, 'rb') as file:
+            file_data = file.read()
+            encrypted_data = f.encrypt(file_data)
+        with open(os.path.join(PATH_TO_RESULT, 'result_AES.txt'), 'wb') as file:
+            file.write(encrypted_data)
+
+    def decrypt_AES(self, file_path: str, secret_code: str):
+        """Расшифровка AES алгоритма"""
+        self.key = secret_code
+        f = Fernet(self.key)
+        with open(file_path, 'rb') as file:
+            file_data = file.read()
+            decrypted_data = f.decrypt(file_data)
+        with open(os.path.join(PATH_TO_RESULT, f'decrypted_AES.txt'), 'wb') as file:
+            file.write(decrypted_data)
+
+    @staticmethod
+    def process_caesar(file_path: str):
+        """Шифрование алгоритмом Цезаря"""
+        with open(file_path, 'r') as file:
+            data = file.read()
+        with open(os.path.join(PATH_TO_RESULT, 'result_caesar.txt'), 'w') as file:
+            result = ''
+            for sym in data:
+                try:
+                    if sym.isalnum():
+                        result += '111' + chr(ord(sym) - 13)
+                    else:
+                        result += '000' + sym
+                except ValueError as error:
+                    result += '000' + sym
+            file.write(result)
+
+    @staticmethod
+    def decrypt_caesar(file_path: str):
+        """Расшифровка алгоритма цезаря"""
+        with open(file_path, 'r') as file:
+            data = file.read()
+        with open(os.path.join(PATH_TO_RESULT, 'decrypted_caesar.txt'), 'w') as file:
+            result = ''
+            for i in range(0, len(data) - 4, 4):
+                if data[i:i+4].startswith('111'):
+                    result += chr(ord(data[i+3]) + 13)
+                else:
+                    result += data[i + 3]
+            file.write(result)
 
     def process_algorithm(self):
         file_path = self.parent().findChild(widgets.upload_file.UploadFile).full_file_path
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Успешно!")
+        msg.setStandardButtons(QMessageBox.Ok)
 
-        if self.algo_title == 'AES':
-            if not os.path.exists(os.path.join(os.getcwd(), 'crypto.key')):
-                ProcessAlgorithm.write_key()
-                self.load_key()
-            f = Fernet(self.key)
-            with open(file_path, 'rb') as file:
-                file_data = file.read()
-                encrypted_data = f.encrypt(file_data)
-            with open('result.txt', 'wb') as file:
-                file.write(encrypted_data)
+        if self.selected_algo.text() == 'AES':
+            self.process_AES(file_path)
+            msg.setText(f"Файл успешно зашифрован. Результат записан в "
+                        f"{'result_' + self.selected_algo.text() + '.txt'}.\n"
+                        f"Для расшифрования Вам потребуется ключ, который"
+                        f" записан в файл {self.selected_file.text()}_crypto_key_{self.selected_algo.text()}.txt.")
+        elif self.selected_algo.text() == "Caesar's algorithm":
+            self.process_caesar(file_path)
+            msg.setText(f"Файл успешно зашифрован. Результат записан в result_caesar.txt.")
         else:
             with open(file_path, 'rb') as file:
-                with open('result.txt', 'w') as output_file:
+                with open('result_SHA-256.txt', 'w') as output_file:
                     for line in file.readlines():
                         hashed_line = hashlib.sha256(line.rstrip()).hexdigest()
                         output_file.write(hashed_line + '\n')
+        msg.show()
+
+    def decrypt_algorithm(self) -> None:
+        file_path = self.parent().findChild(widgets.upload_file.UploadFile).full_file_path
+        algo_name = ''
+
+        if self.selected_algo.text() == "AES":
+            text, ok = QInputDialog.getText(self, 'Ключ для расшифровки', 'Введите ключ для расшифровки')
+            if ok and len(text) > 0:
+                print(text)
+            else:
+                return
+            self.decrypt_AES(file_path, text)
+            algo_name = "AES"
+        elif self.selected_algo.text() == "SHA-256":
+            print("Decrypting with SHA-256")
+            algo_name = "AES"
+        elif self.selected_algo.text() == "Caesar's algorithm":
+            self.decrypt_caesar(file_path)
+            algo_name = "caesar"
+        elif self.selected_algo.text() == "Huffman algorithm":
+            print("Decrypting with Хаффман")
+
+        msg = QMessageBox(self)
+
+        msg.setText(f"Файл успешно расшиврован. Результат записан в {'decrypted_' + algo_name}.txt")
+        msg.setWindowTitle("Успешно")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.show()
 
     def setDisabled(self, a0: bool) -> None:
         super(ProcessAlgorithm, self).setDisabled(a0)

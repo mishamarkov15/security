@@ -30,10 +30,20 @@ class AlgorithmWidget(QWidget):
         algo_2.setObjectName("SHA-256")
         algo_2.toggled.connect(self.on_clicked)
 
+        algo_3 = QRadioButton("Шифр Цезаря")
+        algo_3.setObjectName("Caesar's algorithm")
+        algo_3.toggled.connect(self.on_clicked)
+
+        algo_4 = QRadioButton("Шифр Хаффмана")
+        algo_4.setObjectName("Huffman algorithm")
+        algo_4.toggled.connect(self.on_clicked)
+
         layout.addWidget(self.title, 1, 1, 1, 3)
         layout.addWidget(algo_1, 2, 1, 1, 3)
         layout.addWidget(algo_2, 3, 1, 1, 3)
-        layout.addWidget(QWidget(), 0, 4, 5, 1)
+        layout.addWidget(algo_3, 4, 1, 1, 3)
+        layout.addWidget(algo_4, 5, 1, 1, 3)
+        layout.addWidget(QWidget(), 0, 4, 7, 1)
 
         self.setLayout(layout)
 
