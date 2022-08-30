@@ -126,6 +126,32 @@ class ProcessAlgorithm(QWidget):
                     result += data[i + 3]
             file.write(result)
 
+    @staticmethod
+    def process_haffman(file_path: str):
+        """Шифр Хаффмана"""
+        with open(file_path, 'r') as file:
+            data = file.read()
+        res = ""
+        for sym in data:
+            tmp = str(((ord(sym) + 7) * 15) - 4)
+            value = '0' * (5 - len(tmp)) + tmp
+            res += value
+        with open(os.path.join(PATH_TO_RESULT, 'result_Haffman.txt'), 'w') as file:
+            file.write(res)
+
+    @staticmethod
+    def decrypt_haffman(file_path: str):
+        """Рашифровка Хаффмана"""
+        with open(file_path, 'r') as file:
+            data = file.read()
+        res = ""
+        for i in range(0, len(data), 5):
+            tmp = int(data[i:i + 5])
+            value = chr((tmp + 4) // 15 - 7)
+            res += value
+        with open(os.path.join(PATH_TO_RESULT, 'decrypted_Haffman.txt'), 'w') as file:
+            file.write(res)
+
     def process_algorithm(self):
         file_path = self.parent().findChild(widgets.upload_file.UploadFile).full_file_path
         msg = QMessageBox(self)
@@ -141,6 +167,9 @@ class ProcessAlgorithm(QWidget):
         elif self.selected_algo.text() == "Caesar's algorithm":
             self.process_caesar(file_path)
             msg.setText(f"Файл успешно зашифрован. Результат записан в result_caesar.txt.")
+        elif self.selected_algo.text() == "Huffman algorithm":
+            self.process_haffman(file_path)
+            msg.setText(f"Файл успешно зашифрован. Результат записан в result_Haffman.txt.")
         else:
             with open(file_path, 'rb') as file:
                 with open('result_SHA-256.txt', 'w') as output_file:
@@ -168,7 +197,8 @@ class ProcessAlgorithm(QWidget):
             self.decrypt_caesar(file_path)
             algo_name = "caesar"
         elif self.selected_algo.text() == "Huffman algorithm":
-            print("Decrypting with Хаффман")
+            self.decrypt_haffman(file_path)
+            algo_name = "Haffman"
 
         msg = QMessageBox(self)
 
