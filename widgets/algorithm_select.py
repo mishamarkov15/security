@@ -26,8 +26,8 @@ class AlgorithmWidget(QWidget):
         algo_1.setObjectName("AES")
         algo_1.toggled.connect(self.on_clicked)
 
-        algo_2 = QRadioButton("SHA-256")
-        algo_2.setObjectName("SHA-256")
+        algo_2 = QRadioButton("Шифр Джосефа")
+        algo_2.setObjectName("Josephus algorithm")
         algo_2.toggled.connect(self.on_clicked)
 
         algo_3 = QRadioButton("Шифр Цезаря")

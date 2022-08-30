@@ -64,13 +64,15 @@ class ProcessAlgorithm(QWidget):
 
     def write_key(self):
         key = Fernet.generate_key()
-        with open(os.path.join(PATH_TO_RESULT + 'crypto.key'), 'wb') as file:
+        with open(os.path.join(PATH_TO_RESULT, 'crypto.key'), 'wb') as file:
             file.write(key)
-        with open(os.path.join(PATH_TO_RESULT + f'{self.selected_file.text()}_crypto_key.txt'), 'wb') as file:
+        with open(os.path.join(PATH_TO_RESULT,
+                               f'{self.selected_file.text()[:len(self.selected_file.text())-4]}_crypto_key.txt'),
+                  'wb') as file:
             file.write(key)
 
     def load_key(self):
-        self.key = open(PATH_TO_RESULT + 'crypto.key', 'rb').read()
+        self.key = open(os.path.join(PATH_TO_RESULT, 'crypto.key'), 'rb').read()
 
     def process_AES(self, file_path: str):
         """Шифрование алгоритмом AES"""
@@ -152,6 +154,33 @@ class ProcessAlgorithm(QWidget):
         with open(os.path.join(PATH_TO_RESULT, 'decrypted_Haffman.txt'), 'w') as file:
             file.write(res)
 
+    @staticmethod
+    def process_josephus(file_path: str):
+        """Шифр Джосефа"""
+        with open(file_path, 'r') as file:
+            data = file.read()
+        res = ""
+        for sym in data:
+            tmp = str((((ord(sym) + 4) * 3) + 8) * 2)
+            value = str(100000 - int(tmp))
+            value = '0' * (6 - len(value)) + value
+            res += value
+        with open(os.path.join(PATH_TO_RESULT, 'result_Josephus.txt'), 'w') as file:
+            file.write(res)
+
+    @staticmethod
+    def decrypt_josephus(file_path: str):
+        """Рашифровка Джосефа"""
+        with open(file_path, 'r') as file:
+            data = file.read()
+        res = ""
+        for i in range(0, len(data), 6):
+            tmp = int(data[i:i + 6])
+            value = chr((100000 - int(tmp) - 16) // 6 - 4)
+            res += value
+        with open(os.path.join(PATH_TO_RESULT, 'decrypted_Josephus.txt'), 'w') as file:
+            file.write(res)
+
     def process_algorithm(self):
         file_path = self.parent().findChild(widgets.upload_file.UploadFile).full_file_path
         msg = QMessageBox(self)
@@ -171,11 +200,8 @@ class ProcessAlgorithm(QWidget):
             self.process_haffman(file_path)
             msg.setText(f"Файл успешно зашифрован. Результат записан в result_Haffman.txt.")
         else:
-            with open(file_path, 'rb') as file:
-                with open('result_SHA-256.txt', 'w') as output_file:
-                    for line in file.readlines():
-                        hashed_line = hashlib.sha256(line.rstrip()).hexdigest()
-                        output_file.write(hashed_line + '\n')
+            self.process_josephus(file_path)
+            msg.setText(f"Файл успешно зашифрован. Результат записан в result_Josephus.txt.")
         msg.show()
 
     def decrypt_algorithm(self) -> None:
@@ -190,9 +216,9 @@ class ProcessAlgorithm(QWidget):
                 return
             self.decrypt_AES(file_path, text)
             algo_name = "AES"
-        elif self.selected_algo.text() == "SHA-256":
-            print("Decrypting with SHA-256")
-            algo_name = "AES"
+        elif self.selected_algo.text() == "Josephus algorithm":
+            self.decrypt_josephus(file_path)
+            algo_name = "Josephus"
         elif self.selected_algo.text() == "Caesar's algorithm":
             self.decrypt_caesar(file_path)
             algo_name = "caesar"

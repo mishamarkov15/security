@@ -46,6 +46,6 @@ class UploadFile(QWidget):
         self.file_name_title.setText(os.path.basename(file_path))
         self.parent().findChild(widgets.algorithm_select.AlgorithmWidget).setDisabled(False)
 
-        #right_widget = self.parent().findChild(widgets.algorithm_select.AlgorithmWidget)
-        #if right_widget.isEnabled():
-            #right_widget.selected_algo.setText(self.file_name_title)
+        right_widget = self.parent().findChild(widgets.process_file.ProcessAlgorithm)
+        if right_widget.isEnabled():
+            right_widget.selected_file.setText(self.file_name_title.text())
